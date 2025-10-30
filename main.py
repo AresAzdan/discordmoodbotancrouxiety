@@ -204,7 +204,7 @@ def index():
 
 def run_web_server():
     # Web server berjalan di background
-    web.run(host='0.0.0.0', port=8080)
+    web.run(host='0.0.0.0', port=5000)
 
 
 # Jalankan web server di thread terpisah (agar tidak memblokir bot)
@@ -212,6 +212,4 @@ t = threading.Thread(target=run_web_server)
 t.start()
 
 # --- JALANKAN BOT (INI HARUS BARIS PALING AKHIR) ---
-bot.run(TOKEN)
-# --- RUN BOT ---
 bot.run(TOKEN)
