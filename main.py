@@ -210,6 +210,15 @@ def run_web_server():
 # Jalankan web server di thread terpisah (agar tidak memblokir bot)
 t = threading.Thread(target=run_web_server)
 t.start()
-
+# --- COMMAND SEMENTARA UNTUK SYNC SLASH COMMANDS ---
+@bot.command()
+async def sync(ctx):
+    # Hanya pemilik server yang bisa sync
+    if ctx.author.id == ctx.guild.owner_id: 
+        synced = await bot.tree.sync()
+        await ctx.send(f"✅ Synced {len(synced)} global commands.")
+    else:
+        await ctx.send("❌ Kamu tidak punya izin.")
 # --- JALANKAN BOT (INI HARUS BARIS PALING AKHIR) ---
 bot.run(TOKEN)
+
