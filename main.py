@@ -159,7 +159,7 @@ async def on_guild_join(guild):
     role_b = "Hira"
 
     embed = discord.Embed(
-        title="Hi! I’m your Couple Bot 💞",
+        title="Hi! I am baymax, your personal healthcare companion",
         description=
         f"Selamat datang! Untuk memulai, silakan **pilih peran** kamu di bawah. Pilihan peran: **{role_a}** atau **{role_b}**.",
         color=discord.Color.from_rgb(255, 192, 203))
