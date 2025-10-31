@@ -1,8 +1,8 @@
-# --- FILE: mood_cog.py (Final Fix) ---
+# --- FILE: mood_cog.py (KODE YANG PASTI JALAN DAN RAPI) ---
 import discord
 from discord.ext import commands, tasks
 import aiosqlite
-from datetime import datetime, timedelta, time # <-- Ditambahkan 'time'
+from datetime import datetime, timedelta, time
 import pytz
 from discord.ui import View, Select
 from discord import app_commands
@@ -82,36 +82,7 @@ class MoodCog(commands.Cog):
 
     def cog_unload(self):
         self.daily_mood_check.cancel()
-
-    # --- FILE: mood_cog.py ---
-
-# ... (Baris 84: self.daily_mood_check.cancel())
-# Baris 85: 
-    # --- MULAI TAMBAHKAN KODE INI DI BARIS INI ---
-    @app_commands.command(name="testmood", description="Memaksa menjalankan pengecekan mood harian (khusus admin).")
-    async def testmood_command(self, interaction: discord.Interaction):
-        # Cek apakah user adalah pemilik server (admin) sebelum memicu     
-        # Panggil fungsi task loop secara langsung
-        # Perhatikan: Tidak perlu await di sini karena daily_mood_check adalah task loop.
-        # Tapi kita bisa memanggil fungsi di dalamnya untuk tes.
         
-        # Opsi yang lebih aman adalah memanggil logic di dalam task:
-        await self.daily_mood_check.callback() # <-- Panggil fungsi di dalam task loop
-        
-        await interaction.response.send_message("✅ Pengecekan mood harian (21:00 WIB) telah dipicu secara manual!", ephemeral=True)
-    @app_commands.command(name="checkdata", description="Mengecek data role kamu di database.")
-    async def check_data_command(self, interaction: discord.Interaction):
-        # Gunakan DB_PATH yang sudah didefinisikan di atas
-        async with aiosqlite.connect(DB_PATH) as db: 
-            # Menggunakan nama tabel 'users' dan kolom 'role_name' yang sudah benar
-            cursor = await db.execute("SELECT role_name FROM users WHERE user_id = ?", (interaction.user.id,)) 
-            result = await cursor.fetchone()
-            
-        if result:
-            await interaction.response.send_message(f"✅ Data kamu tersimpan! Role kamu: **{result[0]}**", ephemeral=True)
-        else:
-            await interaction.response.send_message("❌ Data kamu BELUM tersimpan di database. Silakan gunakan /setrole lagi.", ephemeral=True)
-    # --- LANJUT KE FUNGSI HELPER (async def get_partner_info...) ---
     # --- HELPER FUNCTIONS ---
 
     async def get_partner_info(self, user_id):
@@ -123,8 +94,7 @@ class MoodCog(commands.Cog):
                 return None, None, None, None
             
             user_role = user_role_row[0]
-            # Harus disesuaikan dengan role di main.py
-            partner_role = 'Ariel' if user_role == 'Hira' else 'Hira' 
+            partner_role = 'Ariel' if user_role == 'Hira' else 'Hira'
 
             cursor = await db.execute("SELECT user_id, personal_channel_id FROM users WHERE role_name = ?", (partner_role,))
             partner_data = await cursor.fetchone()
@@ -160,9 +130,8 @@ class MoodCog(commands.Cog):
 
 
     # --- SLASH COMMAND /mood ---
-
     @app_commands.command(name="mood", description="Cek dan masukkan mood harian kamu.")
-    async def mood_command(self, interaction: discord.Interaction): # <-- FIX Context
+    async def mood_command(self, interaction: discord.Interaction): 
         user_role, partner_role, partner_id, _ = await self.get_partner_info(interaction.user.id)
         
         if not user_role or not partner_id:
@@ -173,9 +142,8 @@ class MoodCog(commands.Cog):
 
 
     # --- SLASH COMMAND /mood_summary ---
-
     @app_commands.command(name="mood_summary", description="Lihat ringkasan mood mingguan kamu.")
-    async def mood_summary(self, interaction: discord.Interaction): # <-- FIX Context
+    async def mood_summary(self, interaction: discord.Interaction): 
         user_id = interaction.user.id
         today = datetime.now(pytz.timezone('Asia/Jakarta'))
         start_of_week = (today - timedelta(days=today.weekday())).strftime('%Y-%m-%d')
@@ -205,8 +173,26 @@ class MoodCog(commands.Cog):
         await interaction.response.send_message(summary_text, ephemeral=True)
 
 
-async def setup(bot):
+    # --- SLASH COMMAND /testmood (UNTUK SEMUA MEMBER) ---
+    @app_commands.command(name="testmood", description="Memaksa menjalankan pengecekan mood harian.")
+    async def testmood_command(self, interaction: discord.Interaction):
+        # Panggil fungsi task loop secara langsung
+        await self.daily_mood_check.callback() 
+        await interaction.response.send_message("✅ Pengecekan mood harian telah dipicu secara manual!", ephemeral=True)
 
-    await bot.add_cog(MoodCog(bot)) # WAJIB PAKE 'await' dan 'async'
+
+    # --- SLASH COMMAND /checkdata ---
+    @app_commands.command(name="checkdata", description="Mengecek data role kamu di database.")
+    async def check_data_command(self, interaction: discord.Interaction):
+        async with aiosqlite.connect(DB_PATH) as db: 
+            cursor = await db.execute("SELECT role_name FROM users WHERE user_id = ?", (interaction.user.id,)) 
+            result = await cursor.fetchone()
+            
+        if result:
+            await interaction.response.send_message(f"✅ Data kamu tersimpan! Role kamu: **{result[0]}**", ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ Data kamu BELUM tersimpan di database. Silakan gunakan /setrole lagi.", ephemeral=True)
 
 
+def setup(bot): 
+    asyncio.run(bot.add_cog(MoodCog(bot))) # Menggunakan asyncio.run untuk memastikan sync (jika diperlukan)
