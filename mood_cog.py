@@ -82,7 +82,28 @@ class MoodCog(commands.Cog):
 
     def cog_unload(self):
         self.daily_mood_check.cancel()
+
+    # --- FILE: mood_cog.py ---
+
+# ... (Baris 84: self.daily_mood_check.cancel())
+# Baris 85: 
+    # --- MULAI TAMBAHKAN KODE INI DI BARIS INI ---
+    @app_commands.command(name="testmood", description="Memaksa menjalankan pengecekan mood harian (khusus admin).")
+    async def testmood_command(self, interaction: discord.Interaction):
+        # Cek apakah user adalah pemilik server (admin) sebelum memicu
+        if interaction.user.id != interaction.guild.owner_id:
+            return await interaction.response.send_message("❌ Hanya pemilik server yang bisa menjalankan tes ini.", ephemeral=True)
+            
+        # Panggil fungsi task loop secara langsung
+        # Perhatikan: Tidak perlu await di sini karena daily_mood_check adalah task loop.
+        # Tapi kita bisa memanggil fungsi di dalamnya untuk tes.
         
+        # Opsi yang lebih aman adalah memanggil logic di dalam task:
+        await self.daily_mood_check.callback() # <-- Panggil fungsi di dalam task loop
+        
+        await interaction.response.send_message("✅ Pengecekan mood harian (21:00 WIB) telah dipicu secara manual!", ephemeral=True)
+
+    # --- LANJUT KE FUNGSI HELPER (async def get_partner_info...) ---
     # --- HELPER FUNCTIONS ---
 
     async def get_partner_info(self, user_id):
@@ -177,4 +198,5 @@ class MoodCog(commands.Cog):
 
 
 async def setup(bot):
+
     await bot.add_cog(MoodCog(bot)) # WAJIB PAKE 'await' dan 'async'
