@@ -133,7 +133,7 @@ class MoodCog(commands.Cog):
     @app_commands.command(name="mood", description="Cek dan masukkan mood harian kamu.")
     async def mood_command(self, interaction: discord.Interaction): 
         user_role, partner_role, partner_id, _ = await self.get_partner_info(interaction.user.id)
-        
+        await interaction.response.defer(ephemeral=True)
         if not user_role or not partner_id:
             return await interaction.response.send_message("⚠️ Kamu atau partner kamu belum menetapkan role. Silakan gunakan tombol di pesan perkenalan bot.", ephemeral=True)
 
@@ -176,6 +176,7 @@ class MoodCog(commands.Cog):
     # --- SLASH COMMAND /testmood (UNTUK SEMUA MEMBER) ---
     @app_commands.command(name="testmood", description="Memaksa menjalankan pengecekan mood harian.")
     async def testmood_command(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)D
         # Panggil fungsi task loop secara langsung
         await self.daily_mood_check.callback() 
         await interaction.response.send_message("✅ Pengecekan mood harian telah dipicu secara manual!", ephemeral=True)
@@ -184,6 +185,7 @@ class MoodCog(commands.Cog):
     # --- SLASH COMMAND /checkdata ---
     @app_commands.command(name="checkdata", description="Mengecek data role kamu di database.")
     async def check_data_command(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
         async with aiosqlite.connect(DB_PATH) as db: 
             cursor = await db.execute("SELECT role_name FROM users WHERE user_id = ?", (interaction.user.id,)) 
             result = await cursor.fetchone()
@@ -196,3 +198,4 @@ class MoodCog(commands.Cog):
 
 def setup(bot): 
     asyncio.run(bot.add_cog(MoodCog(bot))) # Menggunakan asyncio.run untuk memastikan sync (jika diperlukan)
+
