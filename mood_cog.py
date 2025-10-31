@@ -90,10 +90,7 @@ class MoodCog(commands.Cog):
     # --- MULAI TAMBAHKAN KODE INI DI BARIS INI ---
     @app_commands.command(name="testmood", description="Memaksa menjalankan pengecekan mood harian (khusus admin).")
     async def testmood_command(self, interaction: discord.Interaction):
-        # Cek apakah user adalah pemilik server (admin) sebelum memicu
-        if interaction.user.id != interaction.guild.owner_id:
-            return await interaction.response.send_message("❌ Hanya pemilik server yang bisa menjalankan tes ini.", ephemeral=True)
-            
+        # Cek apakah user adalah pemilik server (admin) sebelum memicu     
         # Panggil fungsi task loop secara langsung
         # Perhatikan: Tidak perlu await di sini karena daily_mood_check adalah task loop.
         # Tapi kita bisa memanggil fungsi di dalamnya untuk tes.
@@ -200,3 +197,4 @@ class MoodCog(commands.Cog):
 async def setup(bot):
 
     await bot.add_cog(MoodCog(bot)) # WAJIB PAKE 'await' dan 'async'
+
