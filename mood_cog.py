@@ -99,7 +99,18 @@ class MoodCog(commands.Cog):
         await self.daily_mood_check.callback() # <-- Panggil fungsi di dalam task loop
         
         await interaction.response.send_message("✅ Pengecekan mood harian (21:00 WIB) telah dipicu secara manual!", ephemeral=True)
-
+    @app_commands.command(name="checkdata", description="Mengecek data role kamu di database.")
+    async def check_data_command(self, interaction: discord.Interaction):
+        # Gunakan DB_PATH yang sudah didefinisikan di atas
+        async with aiosqlite.connect(DB_PATH) as db: 
+            # Menggunakan nama tabel 'users' dan kolom 'role_name' yang sudah benar
+            cursor = await db.execute("SELECT role_name FROM users WHERE user_id = ?", (interaction.user.id,)) 
+            result = await cursor.fetchone()
+            
+        if result:
+            await interaction.response.send_message(f"✅ Data kamu tersimpan! Role kamu: **{result[0]}**", ephemeral=True)
+        else:
+            await interaction.response.send_message("❌ Data kamu BELUM tersimpan di database. Silakan gunakan /setrole lagi.", ephemeral=True)
     # --- LANJUT KE FUNGSI HELPER (async def get_partner_info...) ---
     # --- HELPER FUNCTIONS ---
 
@@ -197,4 +208,5 @@ class MoodCog(commands.Cog):
 async def setup(bot):
 
     await bot.add_cog(MoodCog(bot)) # WAJIB PAKE 'await' dan 'async'
+
 
