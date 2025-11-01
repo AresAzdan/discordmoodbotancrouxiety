@@ -30,14 +30,45 @@ class MoodSelectView(View):
         select.callback = self.mood_select_callback
         return select
 
-    async def mood_select_callback(self, interaction: discord.Interaction):
-        mood_emoji = interaction.data['values'][0]
-        mood_name = MOOD_MAP.get(mood_emoji, 'Unknown')
-        user_id = interaction.user.id
-        today = datetime.now(pytz.timezone('Asia/Jakarta')).strftime('%Y-%m-%d')
-        
-        # Deferring untuk mencegah timeout
-        await interaction.response.defer(ephemeral=True) 
+   async def mood_select_callback(self, interaction: discord.Interaction):
+    
+    await interaction.response.defer(ephemeral=True) # Baris 34: Defer
+
+    mood_emoji = interaction.data['values'][0]
+    mood_name = MOOD_MAP.get(mood_emoji, 'Unknown')
+    user_id = interaction.user.id
+    today = datetime.now(pytz.timezone('Asia/Jakarta')).strftime('%Y-%m-%d')
+    
+    # --- LOGIC UTAMA (Wajib Ada) ---
+    
+    # 1. Simpan Mood ke Database
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT OR REPLACE INTO moods (user_id, date, mood_level) VALUES (?, ?, ?)",
+            (user_id, today, mood_emoji)
+        )
+        await db.commit()
+
+    # 2. Notifikasi Partner
+    user_role, partner_role, partner_id, partner_channel_id = await self.bot.get_partner_info(user_id)
+    
+    notification_message = None
+    if mood_emoji in ['😭', '😢', '😠']:
+        notification_message = f"{self.bot.get_user(partner_id).mention}, {interaction.user.mention} feels **{mood_emoji} {mood_name}** today. Please check on them."
+    elif mood_emoji == '📞':
+        notification_message = f"{self.bot.get_user(partner_id).mention}, hop on the voice channel — {interaction.user.mention} needs a call! **{mood_emoji}**"
+
+    if notification_message:
+        if partner_channel_id:
+            partner_channel = self.bot.get_channel(partner_channel_id)
+            if partner_channel:
+                await partner_channel.send(notification_message)
+    
+    # 3. Kirim Balasan Sukses (Wajib Penuh)
+    await interaction.followup.send(
+        f"✅ Mood hari ini ({today}) kamu adalah **{mood_emoji} {mood_name}**.", 
+        ephemeral=True
+    )
         
         # --- Simpan Mood ---
         async with aiosqlite.connect(DB_PATH) as db:
@@ -97,7 +128,7 @@ class MoodCog(commands.Cog):
             result = await cursor.fetchone()
             return result[0] if result else None
 
-    @tasks.loop(time=time(21, 0, 0, tzinfo=pytz.timezone('Asia/Jakarta')))
+   @tasks.loop(time=time(21, 0, 0, tzinfo=pytz.timezone('Asia/Jakarta')))
     async def daily_mood_check(self):
         async with aiosqlite.connect(DB_PATH) as db:
             cursor = await db.execute("SELECT user_id, personal_channel_id FROM users")
@@ -109,10 +140,17 @@ class MoodCog(commands.Cog):
 
                 if user and channel:
                     user_role, partner_role, partner_id, _ = await self.get_partner_info(user_id)
-                    if partner_id:
+                    
+                    # --- LOGIC PERUBAHAN DI SINI ---
+                    # Jika partner_id adalah None (belum terdaftar), kirim pesan notifikasi saja
+                    if not partner_id:
+                        await channel.send("ℹ️ Mood Check dilewati: Partner kamu belum terdaftar. Minta mereka untuk memilih role.")
+                        continue # Lanjut ke user berikutnya
+                    # --- AKHIR LOGIC PERUBAHAN ---
+                    
+                    if partner_id: # (Ini sudah pasti True karena ada continue di atas)
                         view = MoodSelectView(self.bot, partner_id, partner_role)
                         await channel.send(f"**{user.mention}, waktunya cek mood hari ini!** 📝", view=view)
-
 
     # --- SLASH COMMAND /mood (FIXED) ---
     @app_commands.command(name="mood", description="Cek dan masukkan mood harian kamu.")
@@ -148,7 +186,7 @@ class MoodCog(commands.Cog):
     @app_commands.command(name="testmood", description="Memaksa menjalankan pengecekan mood harian.")
     async def testmood_command(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True) # DEFER
-        await self.daily_mood_check.callback() 
+        await self.daily_mood_check() 
         await interaction.followup.send("✅ Pengecekan mood harian telah dipicu secara manual!", ephemeral=True) # FOLLOWUP
 
     # --- SLASH COMMAND /checkdata (FIXED) ---
@@ -167,3 +205,4 @@ class MoodCog(commands.Cog):
 
 async def setup(bot): 
     await bot.add_cog(MoodCog(bot))
+
