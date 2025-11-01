@@ -138,20 +138,18 @@ async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     await setup_db()
 
-    # Load Cogs
+    # Load semua COG terlebih dahulu
     try:
         await bot.load_extension('mood_cog')
         await bot.load_extension('bantuan_cog')
-        await bot.load_extension('language_cog'
-                                 )  # Ditambahkan untuk fitur bahasa
-        await bot.load_extension('reminder_cog'
-                                 )  # Ditambahkan untuk fitur reminder
+        await bot.load_extension('language_cog')
+        await bot.load_extension('reminder_cog')
     except commands.ExtensionFailed as e:
         print(f"ERROR LOADING COG: {e}")
 
-    # Sync tree commands
+    # Sync setelah semua cog sudah dimuat
     await bot.tree.sync()
-
+    print("✅ Semua slash command berhasil disinkronkan!")
 
 @bot.event
 async def on_guild_join(guild):
@@ -221,4 +219,5 @@ async def sync(ctx):
         await ctx.send("❌ Kamu tidak punya izin.")
 # --- JALANKAN BOT (INI HARUS BARIS PALING AKHIR) ---
 bot.run(TOKEN)
+
 
